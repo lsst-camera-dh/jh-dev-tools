@@ -42,7 +42,7 @@ class Traveler(list):
         for item in self:
             output.append(str(item))
         return '\n'.join(output)
-    def write_fakelims_traveler(self, outfile):
+    def write_fake_eT_traveler(self, outfile):
         my_dict = dict()
         for item in self:
             my_dict[item.fakelims_id()] = []
