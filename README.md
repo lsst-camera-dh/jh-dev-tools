@@ -2,16 +2,16 @@
 
 This package provides an infrastructure for testing harnessed jobs
 under the lcatr-* code without having to run the eTraveler web
-application and thereby avoids polluting the eTraveler db tables and
-Data Catalog with test entries and files.
+application and thereby allowing the developer to avoid polluting 
+the eTraveler db tables and Data Catalog with test entries and files.
 
 To use this package, one sets up a Job Harness runtime environment
-(indicated below by a "[jh]$ " bash prompt), and adds this package's
+(indicated below by a "[jh]$ " bash prompt) and adds this package's
 bin and python folders to the PATH and PYTHONPATH environment
 variables, respectively.
 
-As usual, there must be a symlinks from the harnessed job folder to
-the Job Harness share directory, so if the lcatr-harness command is
+As usual, there must be a symlink from the folder of the harnessed job 
+to the Job Harness share directory. So if the lcatr-harness command is
 ```
 [jh]$ which lcatr-harness
 <...JH runtime dir...>/bin/lcatr-harness
@@ -23,7 +23,7 @@ runtime dir...>/share, e.g., for the test_job in the examples folder,
 ```
 
 The config/lcatr.cfg file needs to be appropriately modified and
-placed in the user's working directory; and from that directory, one
+placed in the developer's working directory.  From that directory, one
 runs the fake eTraveler server, giving it the python version of the
 traveler:
 ```
@@ -49,3 +49,13 @@ Step produce completed
 executing validator_test_job.py
 <...more output...>
 ```
+
+### Generating yaml and python versions of eTraveler processes.
+Modules in the python folder of this package are provided to generate 
+yaml and python versions of process travelers using some minmal 
+abstractions in python of the process steps that compose a traveler.  
+Example usage is given in examples/traveler_example.py.  The yaml that
+is produced was runnable in the eTraveler web app as of August 2015, 
+but it does not take full advantage of the eTraveler yaml semantics. 
+The generated python versions of the travelers only express the dependencies
+between harnessed jobs in a single process traveler.
