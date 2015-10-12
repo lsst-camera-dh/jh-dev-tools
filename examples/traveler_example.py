@@ -3,8 +3,6 @@ Example usage of the eTravelerComponents.py module for generating yaml
 definitions of eTraveler processes and equivalent python-based
 representations for running under fake_eT.py.
 """
-import sys
-sys.path.append('../python')
 import os
 from eTravelerComponents import Traveler
 
