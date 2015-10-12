@@ -143,7 +143,7 @@ class FakeLimsCommands(object):
         }
 
     def __init__(self, traveler_data=None):
-        dbfile = os.path.splitext(__file__)[0] + '.db'
+        dbfile = '.'.join(traveler_data.split('.')[:-1]) + '.db'
         print "dbfile:", dbfile
         self.db = FakeLimsDB(dbfile)
         self.traveler = FakeTraveler(traveler_data=traveler_data)

@@ -1,0 +1,6 @@
+# -*- python -*-
+{
+    'schema_name' : 'test_job',
+    'schema_version' : 0,
+    'status' : int
+}
