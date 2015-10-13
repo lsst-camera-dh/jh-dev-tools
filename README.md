@@ -17,21 +17,19 @@ to the Job Harness share directory. So if the lcatr-harness command is
 <...JH runtime dir...>/bin/lcatr-harness
 ```
 then the harnessed job directory would be symlinked under <...JH
-runtime dir...>/share, e.g., for the test_job in the examples folder,
-```
-[jh]$ ln -s examples/test_job <...JH runtime dir...>/share
-```
+runtime dir...>/share, e.g., for the test_job in the examples folder.
 
 The config/lcatr.cfg file needs to be appropriately modified and
 placed in the developer's working directory.  From that directory, one
 runs the fake eTraveler server, giving it the python version of the
-traveler:
+traveler, e.g., 
 ```
 [jh]$ fake_eT.py test_job_traveler.py
 dbfile: test_job_traveler.db
 Checking test_job_traveler.py...
 started httpserver...
 ```
+(assuming, of course, that file is in the cwd.)
 
 In a separate window, the job under development can be then be
 executed and it will communicate with the fake_eT.py http server:
