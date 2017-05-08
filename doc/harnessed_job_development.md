@@ -1,6 +1,6 @@
 # Developing harnessed jobs to run in the eTraveler
 
-## Create a JH installation
+## Create a JH installation.
 
 Create a JH installation area using the packageList from the release
 package that corresponds to the software subsystem for which you want
@@ -140,3 +140,27 @@ of the package is made.  Developers are free to create beta releases
 on their development branch so that the install.py script can be used
 to make a preliminary release candidate installation for testing
 against the dev eTraveler instance.
+
+A typical development session might look like this:
+```
+$ <edit some files>
+$ git add -p       # select changes to stage for committing
+$ git commit -m "<a helpful description of the changes>"
+<...additional work and commits...>
+$ git push
+```
+
+If this is the first set of commits on this branch to be pushed to GitHub,
+the push command will need to set the branch name on GitHub, e.g.,
+```
+$ git push -u origin u/jchiang/ts8_pd_monitoring
+```
+It is best to use `git add -p` to avoid committing unintended files
+from being staged (and subsequently committed and pushed).  Unstaged
+diffs can be viewed with `git diff` while staged diffs can be viewed
+with `git diff --staged`.
+
+Generally speaking, it is better not to let development linger on a
+branch for too long as the code on master will evolve and
+inconsistencies with the old code on the branch may arise, thereby
+making it difficult to reconcile with the current master.
