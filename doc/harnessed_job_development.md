@@ -121,8 +121,21 @@ $ cat producer_ts8_pd_calibration.py
 from ccsTools import ccsProducer, CcsRaftSetup
 
 ccsProducer('ts8_pd_calibration', 'ccs_ts8_pd_calibration.py',
-            ccs_setup_class=CcsRaftSetup)
+            ccs_setup_class=CcsRaftSetup,
+            sys_paths=(os.path.join(os.environ['IANDTJOBSDIR'], 'python'),))
 ```
+The `sys_paths` keyword argument allows one to specify directory paths
+to any _jython_ modules that the jython script called by the
+`ccsProducer` function would call.  Note that the jython scripts do
+not share the same python environment as the `producer` and
+`validator` scripts, so the paths to any user-provided jython modules
+need to be added via this keyword.
+
+Note also that the jython scripts are not executed on one of the
+usual IR-2 login nodes (e.g., lsst-dc10 or lsst-it01).  This means
+that the harnessed job code has to be installed on a file system that
+can be seen from all of the IR-2 machines.  In practice, any JH
+development code should be installed in the `/lnfs/lsst/devel` area.
 
 ## Using GitHub Flow for development.
 
