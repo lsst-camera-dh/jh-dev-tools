@@ -5,14 +5,19 @@ Let's pretend we are the eTraveler.
 This provides an HTTP server that tries mightily to pretend to be like
 the real eTraveler web app.
 """
-
+from __future__ import print_function
 import os
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import sys
+try:
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+except ImportError:
+    # python 2 backwards compatibility
+    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
 import time
 import collections
-from sys import stderr
+import importlib
 import pickle
 import logging
 
@@ -23,12 +28,16 @@ def check_traveler(traveler_data, verbose=True):
     Check that the dependencies in the dictionary representation of a
     fakelims traveler are consistent.
     """
-    if not isinstance(traveler_data, dict):
-        # Assume this is an python module, so import the traveler_data
-        # dictionary.
+    if os.path.isfile(traveler_data):
+        # This is a python module, so import the traveler_data
+        # dictionary from that module.
         if verbose:
-            print "Checking %s..." % traveler_data
-        exec('from %s import traveler_data' % traveler_data.split('.py')[0])
+            print("Checking %s..." % traveler_data)
+        module_path, module_name = os.path.split(os.path.abspath(traveler_data))
+        if module_path not in sys.path:
+            sys.path.insert(0, module_path)
+        traveler_module = importlib.import_module(module_name[:-len('.py')])
+        traveler_data = traveler_module.traveler_data
     #
     # Loop over dependencies for each task and check that the
     # dependency exists as a task.
@@ -45,13 +54,13 @@ class FakeTraveler(object):
                                      ('example_ana_A','v0')),
         }
     def __init__(self, traveler_data=None):
-        if not traveler_data:
-            print "FakeTraveler: Using default_traveler"
+        if traveler_data is None:
+            print("FakeTraveler: Using default_traveler")
             traveler_data = FakeTraveler.default_traveler
         traveler_data = check_traveler(traveler_data)
         self.traveler = traveler_data
         deps = collections.defaultdict(list)
-        for parent, daughters in traveler_data.iteritems():
+        for parent, daughters in traveler_data.items():
             logging.debug('parent:"%s", daughters="%s"' % (parent, daughters))
             for d in daughters:
                 deps[d].append(parent)
@@ -75,10 +84,14 @@ class FakeLimsDB(object):
         self.path = path
         try:
             # Load dictionaries of job parameters.
-            self.jobregs = pickle.load(open(self.path))
-        except IOError:
-            # Create from scratch.
-            self.jobregs = []
+            with open(self.path, 'rb') as fd:
+                self.jobregs = pickle.load(fd)
+        except Exception as eobj:
+            if type(eobj) in (IOError, FileNotFoundError):
+                # Create from scratch.
+                self.jobregs = []
+            else:
+                raise
         self.status = collections.defaultdict(list) # indexed by jobids
 
     def register(self, **kwds):
@@ -113,7 +126,7 @@ class FakeLimsDB(object):
             if tomatch.issubset(jrs):
                 return ind
         return None
-        
+
     def update(self, jobid, state, status):
         """
         Update the status of the jobid
@@ -124,15 +137,13 @@ class FakeLimsDB(object):
         return
 
     def persist(self):
-        print "Persisting db object in", self.path
-        output = open(self.path, 'w')
-        pickle.dump(self.jobregs, output)
-        output.close()
+        print("Persisting db object in", self.path)
+        with open(self.path, 'wb') as output:
+            pickle.dump(self.jobregs, output)
 
-    pass
 
 class FakeLimsCommands(object):
-    
+
     # function: [expected, args]
     API = {
         'requestID': ['stamp','unit_type','unit_id', 'job',
@@ -144,7 +155,7 @@ class FakeLimsCommands(object):
 
     def __init__(self, traveler_data=None):
         dbfile = '.'.join(traveler_data.split('.')[:-1]) + '.db'
-        print "dbfile:", dbfile
+        print("dbfile:", dbfile)
         self.db = FakeLimsDB(dbfile)
         self.traveler = FakeTraveler(traveler_data=traveler_data)
         logging.debug('TRAVELER: "%s"' % str(self.traveler))
@@ -235,7 +246,7 @@ class FakeLimsCommands(object):
     pass
 
 class FakeLimsHandler(BaseHTTPRequestHandler):
-    
+
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
@@ -249,17 +260,19 @@ class FakeLimsHandler(BaseHTTPRequestHandler):
         """
         Return a dictionary of query parameters
         """
-        ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
+        ctype, pdict = cgi.parse_header(self.headers['content-type'])
         logging.debug('ctype="%s" pdict="%s"' % (str(ctype), str(pdict)))
         if ctype == 'multipart/form-data':
             postvars = cgi.parse_multipart(self.rfile, pdict)
         elif ctype == 'application/x-www-form-urlencoded':
-            length = int(self.headers.getheader('content-length'))
+            length = int(self.headers['content-length'])
             postvars = cgi.parse_qs(self.rfile.read(length),
                                     keep_blank_values=1)
         else:
             return {}
-        query = {k:v[0] for k,v in postvars.iteritems()}
+
+        query = {k.decode('utf-8'): v[0].decode('utf-8')
+                 for k, v in postvars.items()}
         js = query['jsonObject']
         return json.loads(js)
 
@@ -275,17 +288,17 @@ class FakeLimsHandler(BaseHTTPRequestHandler):
 
         pvars = self.postvars()
         chirp = 'CMD:"%s" POSTVARS:"%s"' % (cmd,pvars)
-        print chirp
+        print(chirp)
         logging.debug(chirp)
 
         required_params = set(api)
 
         if not required_params.issubset(pvars):
             msg = 'Required params: %s' % str(sorted(required_params))
-            log.error(msg)
+            logging.error(msg)
             self.set_error(msg)
             return
-        
+
         self.send_response(200)
         self.send_header('Content-type', 'text/json')
         self.end_headers()
@@ -294,32 +307,31 @@ class FakeLimsHandler(BaseHTTPRequestHandler):
         logging.debug('RET:%s'%str(ret))
         try:
             jstr = json.dumps(ret)
-        except TypeError,msg:
-            print 'Failed to dump to json for return from %s(%s)' \
-                  % (cmd,str(pvars))
+        except TypeError as msg:
+            print('Failed to dump to json for return from %s(%s)' \
+                  % (cmd,str(pvars)))
             raise
-        self.wfile.write(jstr + '\n')
+        self.wfile.write((jstr + '\n').encode('utf-8'))
         return
-        
+
     def set_error(self, msg):
         # use 412 for prereq not satisfied
         self.send_response(400)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        self.wfile.write(msg + '\n')
+        self.wfile.write((msg + '\n').encode('utf-8'))
         return
 
     pass
 
 if __name__ == '__main__':
-    import sys
     lims_commands = FakeLimsCommands(traveler_data=sys.argv[1])
 
     try:
         server = HTTPServer(('', 9876), FakeLimsHandler)
-        print 'started httpserver...'
+        print('started httpserver...')
         server.serve_forever()
     except KeyboardInterrupt:
-        print '^C received, shutting down server'
+        print('^C received, shutting down server')
         lims_commands.db.persist()
         server.socket.close()
