@@ -1,5 +1,6 @@
+from __future__ import print_function
 from collections import OrderedDict
-from eTravelerDb import eTravelerDb
+#from eTravelerDb import eTravelerDb
 
 class Traveler(list):
     def __init__(self, name, hardwareGroup, description,
@@ -13,7 +14,8 @@ class Traveler(list):
         self.version = version
         self.dbObject = None
         if db_info is not None:
-            self.dbObject = eTravelerDb(db_info)
+            pass
+#            self.dbObject = eTravelerDb(db_info)
         self.stepPrefix = stepPrefix
     def stepFactory(self, name, **kwds):
         if self.stepPrefix is not None:
@@ -25,8 +27,8 @@ class Traveler(list):
             processInfo = self.dbObject.processInfo(candidateName)
             if processInfo:
                 process_step.set_isRefObject()
-                print "process step '%s' already exists" % candidateName
-                print "process info:", processInfo
+                print("process step '%s' already exists" % candidateName)
+                print("process info:", processInfo)
         self.append(process_step)
         return process_step
     def __repr__(self):
