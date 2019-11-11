@@ -326,9 +326,13 @@ class FakeLimsHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     lims_commands = FakeLimsCommands(traveler_data=sys.argv[1])
+    try:
+        port = int(sys.argv[2])
+    except IndexError:
+        port = 9873
 
     try:
-        server = HTTPServer(('', 9876), FakeLimsHandler)
+        server = HTTPServer(('', port), FakeLimsHandler)
         print('started httpserver...')
         server.serve_forever()
     except KeyboardInterrupt:
